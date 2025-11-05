@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - KanaryBOT Discord</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar de Navegação -->
+        <aside class="sidebar">
+            <div class="bot-info">
+                <div class="bot-avatar-container">
+                    <img src="https://img.freepik.com/free-vector/friendly-robot-floating-space_1308-161934.jpg?semt=ais_hybrid&w=740&q=80" alt="Bot Avatar" class="bot-avatar">
+                    <span class="status-indicator online"></span>
+                </div>
+                <h2 class="bot-name">KanaryBOT</h2>
+                <p class="bot-status">Online</p>
+            </div>
+            
+            <nav class="nav-menu">
+                <ul>
+                    <li class="nav-item active" data-section="overview">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Visão Geral</span>
+                    </li>
+                    <li class="nav-item" data-section="moderation">
+                        <i class="fas fa-gavel"></i>
+                        <span>Moderação</span>
+                    </li>
+                    <li class="nav-item" data-section="economy">
+                        <i class="fas fa-coins"></i>
+                        <span>Economia</span>
+                    </li>
+                    <li class="nav-item" data-section="music">
+                        <i class="fas fa-music"></i>
+                        <span>Música</span>
+                    </li>
+                    <li class="nav-item" data-section="leveling">
+                        <i class="fas fa-star"></i>
+                        <span>Níveis</span>
+                    </li>
+                    <li class="nav-item" data-section="settings">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Configurações</span>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="https://images-ext-1.discordapp.net/external/mFKK-AFrzpyzTX9FW_40YJDy56-ep-9tPZFKflK7LuM/%3Fsize%3D2048/https/cdn.discordapp.com/avatars/930958576279760947/2a556c8ebdfdd01edfd98d94dbf8bbd1.png?format=webp&quality=lossless" alt="User Avatar" class="user-avatar">
+                    <div class="user-details">
+                        <span class="username">yoozzydev</span>
+                        <span class="user-role">Admin</span>
+                    </div>
+                </div>
+                <button class="logout-btn" title="Sair">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <h1>Dashboard</h1>
+                    <p class="header-subtitle">Gerencie seu servidor Discord</p>
+                </div>
+                <div class="header-right">
+                    <div class="server-selector">
+                        <i class="fas fa-server"></i>
+                        <select id="server-select">
+                            <option value="1">Servidor Principal</option>
+                            <option value="2">Servidor de Testes</option>
+                            <option value="3">Comunidade Gaming</option>
+                        </select>
+                    </div>
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Conteúdo das Seções -->
+            <div class="content-wrapper">
+                <!-- Seção: Visão Geral -->
+                <section id="overview" class="dashboard-section active">
+                    <div class="section-header">
+                        <h2>Visão Geral do Servidor</h2>
+                        <div class="section-controls">
+                            <button class="btn-secondary">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon users">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Membros Totais</h3>
+                                <p class="stat-value">1,234</p>
+                                <span class="stat-change positive">+12 esta semana</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon channels">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Canais</h3>
+                                <p class="stat-value">42</p>
+                                <span class="stat-change">5 de voz, 37 de texto</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon commands">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Comandos Usados</h3>
+                                <p class="stat-value">5,678</p>
+                                <span class="stat-change positive">+234 hoje</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon status">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Status do Bot</h3>
+                                <p class="stat-value online-text">Online</p>
+                                <span class="stat-change">Ping: 45ms</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts e Gráficos -->
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Atividade da Semana</h3>
+                            <div class="chart-placeholder">
+                                <canvas id="activityChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3>Comandos Mais Usados</h3>
+                            <div class="top-commands">
+                                <div class="command-item">
+                                    <span class="command-name">!help</span>
+                                    <div class="command-bar">
+                                        <div class="command-fill" style="width: 95%"></div>
+                                    </div>
+                                    <span class="command-count">456</span>
+                                </div>
+                                <div class="command-item">
+                                    <span class="command-name">!prefix</span>
+                                    <div class="command-bar">
+                                        <div class="command-fill" style="width: 78%"></div>
+                                    </div>
+                                    <span class="command-count">374</span>
+                                </div>
+                                <div class="command-item">
+                                    <span class="command-name">!warn</span>
+                                    <div class="command-bar">
+                                        <div class="command-fill" style="width: 65%"></div>
+                                    </div>
+                                    <span class="command-count">312</span>
+                                </div>
+                                <div class="command-item">
+                                    <span class="command-name">!mute</span>
+                                    <div class="command-bar">
+                                        <div class="command-fill" style="width: 52%"></div>
+                                    </div>
+                                    <span class="command-count">249</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Atividade Recente -->
+                    <div class="recent-activity">
+                        <h3>Atividade Recente</h3>
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-user-plus"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>Novo membro</strong> entrou no servidor</p>
+                                    <span class="activity-time">Há 5 minutos</span>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>Aviso aplicado</strong> a um usuário por spam</p>
+                                    <span class="activity-time">Há 15 minutos</span>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>Música tocada</strong> no canal de voz</p>
+                                    <span class="activity-time">Há 1 hora</span>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-ban"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>Usuário banido</strong> por violação de regras</p>
+                                    <span class="activity-time">Há 2 horas</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Seção: Moderação -->
+                <section id="moderation" class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Configurações de Moderação</h2>
+                    </div>
+
+                    <div class="settings-container">
+                        <div class="settings-group">
+                            <h3><i class="fas fa-shield-alt"></i> Auto-Moderação</h3>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <label>Anti-Spam</label>
+                                    <p>Detecta e remove mensagens spam automaticamente</p>
+                                </div>
+                                <input type="checkbox" id="anti-spam" checked>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <label>Anti-Link</label>
+                                    <p>Remove links não autorizados</p>
+                                </div>
+                                <input type="checkbox" id="anti-link">
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <label>Anti-Profanidade</label>
+                                    <p>Detecta e remove mensagens com palavras proibidas</p>
+                                </div>
+                                <input type="checkbox" id="anti-profanity" checked>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3><i class="fas fa-book"></i> Canais de Log</h3>
+                            <div class="setting-item">
+                                <label>Canal de Logs de Moderação</label>
+                                <select>
+                                    <option>#logs-mod</option>
+                                    <option>#geral</option>
+                                    <option>#admin</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>Canal de Logs de Membros</label>
+                                <select>
+                                    <option>#logs-membros</option>
+                                    <option>#geral</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3><i class="fas fa-users"></i> Funções de Moderação</h3>
+                            <div class="setting-item">
+                                <label>Função de Moderador</label>
+                                <select>
+                                    <option>@Moderador</option>
+                                    <option>@Admin</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>Função de Muted</label>
+                                <select>
+                                    <option>@Muted</option>
+                                    <option>@Silenciado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary">
+                            <i class="fas fa-save"></i> Salvar Configurações
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Seção: Economia -->
+                <section id="economy" class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Sistema de Economia</h2>
+                    </div>
+
+                    <div class="settings-container">
+                        <div class="settings-group">
+                            <h3><i class="fas fa-coins"></i> Configurações de Moeda</h3>
+                            <div class="setting-item">
+                                <label>Nome da Moeda</label>
+                                <input type="text" value="Coins" placeholder="Digite o nome da moeda">
+                            </div>
+                            <div class="setting-item">
+                                <label>Símbolo da Moeda</label>
+                                <input type="text" value="💰" placeholder="Digite o símbolo">
+                            </div>
+                            <div class="setting-item">
+                                <label>Moedas por Mensagem</label>
+                                <input type="number" value="10" min="0">
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3><i class="fas fa-gift"></i> Recompensas Diárias</h3>
+                            <div class="setting-item">
+                                <label>Moedas por Presença Diária</label>
+                                <input type="number" value="100" min="0">
+                            </div>
+                            <div class="setting-item">
+                                <label>Bônus por Semana Completa</label>
+                                <input type="number" value="500" min="0">
+                            </div>
+                        </div>
+
+                        <button class="btn-primary">
+                            <i class="fas fa-save"></i> Salvar Configurações
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Seção: Música -->
+                <section id="music" class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Configurações de Música</h2>
+                    </div>
+
+                    <div class="settings-container">
+                        <div class="settings-group">
+                            <h3><i class="fas fa-music"></i> Sistema de Música</h3>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <label>Ativar Música</label>
+                                    <p>Permite que o bot toque músicas nos canais de voz</p>
+                                </div>
+                                <input type="checkbox" checked>
+                            </div>
+                            <div class="setting-item">
+                                <label>Volume Padrão (%)</label>
+                                <input type="range" min="0" max="100" value="50">
+                            </div>
+                            <div class="setting-item">
+                                <label>Duração Máxima de Música (minutos)</label>
+                                <input type="number" value="60" min="1">
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3><i class="fas fa-list"></i> Fila de Reprodução</h3>
+                            <div class="setting-item">
+                                <label>Tamanho Máximo da Fila</label>
+                                <input type="number" value="100" min="1">
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <label>Permitir Músicas Duplicadas</label>
+                                    <p>Permite que a mesma música seja adicionada múltiplas vezes</p>
+                                </div>
+                                <input type="checkbox">
+                            </div>
+                        </div>
+
+                        <button class="btn-primary">
+                            <i class="fas fa-save"></i> Salvar Configurações
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Seção: Níveis -->
+                <section id="leveling" class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Sistema de Níveis</h2>
+                    </div>
+
+                    <div class="settings-container">
+                        <div class="settings-group">
+                            <h3><i class="fas fa-star"></i> Configurações de XP</h3>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <label>Ativar Sistema de Níveis</label>
+                                    <p>Permite que os usuários ganhem XP e subam de nível</p>
+                                </div>
+                                <input type="checkbox" checked>
+                            </div>
+                            <div class="setting-item">
+                                <label>XP por Mensagem</label>
+                                <input type="number" value="10" min="0">
+                            </div>
+                            <div class="setting-item">
+                                <label>Multiplicador de XP em Voz</label>
+                                <input type="number" value="2" min="1" step="0.5">
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3><i class="fas fa-trophy"></i> Recompensas por Nível</h3>
+                            <div class="setting-item">
+                                <label>Nível para Recompensa</label>
+                                <input type="number" value="5" min="1">
+                            </div>
+                            <div class="setting-item">
+                                <label>Função de Recompensa</label>
+                                <select>
+                                    <option>@Membro Ativo</option>
+                                    <option>@Veterano</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary">
+                            <i class="fas fa-save"></i> Salvar Configurações
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Seção: Configurações -->
+                <section id="settings" class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Configurações Gerais</h2>
+                    </div>
+
+                    <div class="settings-container">
+                        <div class="settings-group">
+                            <h3><i class="fas fa-cog"></i> Configurações Básicas</h3>
+                            <div class="setting-item">
+                                <label>Prefixo do Bot</label>
+                                <input type="text" value="!" placeholder="Digite o prefixo">
+                            </div>
+                            <div class="setting-item">
+                                <label>Idioma</label>
+                                <select>
+                                    <option>Português (Brasil)</option>
+                                    <option>Português (Portugal)</option>
+                                    <option>Inglês</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3><i class="fas fa-bell"></i> Notificações</h3>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <label>Notificações de Novos Membros</label>
+                                    <p>Receber alertas quando novos membros entram</p>
+                                </div>
+                                <input type="checkbox" checked>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <label>Notificações de Erros</label>
+                                    <p>Receber alertas sobre erros do bot</p>
+                                </div>
+                                <input type="checkbox" checked>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary">
+                            <i class="fas fa-save"></i> Salvar Configurações
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

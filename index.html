@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kanary — Login</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#4f46e5;--muted:#9aa4b2;color-scheme:dark}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,system-ui,-apple-system,Arial;background:linear-gradient(180deg,#061025 0%,#071427 60%);color:#e6eef6}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px}
+    .card{width:960px;max-width:100%;background:rgba(8,12,20,.6);border:1px solid rgba(255,255,255,.04);backdrop-filter:blur(6px);padding:28px;border-radius:12px;display:grid;grid-template-columns:1fr 360px;gap:24px}
+    .brand{display:flex;flex-direction:column;gap:12px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo .icon{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted)}
+    .intro{margin-top:12px;color:#cfe7ff}
+    .guilds{display:flex;flex-direction:column;gap:12px;max-height:420px;overflow:auto;padding-right:6px}
+    .guild{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.02);padding:10px;border-radius:8px}
+    .guild .left{display:flex;align-items:center;gap:12px}
+    .avatar{width:44px;height:44px;border-radius:8px;background:#0b1220;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700}
+    .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:0;background:linear-gradient(90deg,var(--accent),#06b6d4);color:white;cursor:pointer;font-weight:600;text-decoration:none}
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,.06);color:#cfe7ff}
+    .muted{color:var(--muted);font-size:13px}
+    .center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    @media (max-width:900px){.card{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="main">
+      <div class="brand">
+        <div class="logo">
+          <div class="icon">K</div>
+          <div>
+            <h1>Kanary Dashboard</h1>
+            <p class="lead">Gerencie o Kanary — faça login com Discord para ver seus servidores e adicionar o bot.</p>
+          </div>
+        </div>
+
+        <p class="intro">Ao entrar via Discord permitimos apenas identificar o usuário e listar os servidores que ele administra. Para adicionar o bot em um servidor, clique em "Adicionar Kanary" no servidor desejado.</p>
+
+        <div style="margin-top:8px">
+          <!-- BOTÕES DE LOGIN -->
+          <button id="loginBtn" class="btn">Entrar com Discord</button>
+          <button id="dashboardBtn" class="btn">Dashboard<a href="./dashboard/index.html"></a></button>
+          <button id="logoutBtn" class="btn secondary" style="display:none;margin-left:12px">Sair</button>
+        </div>
+
+        <footer>
+          <div class="muted">Nota: esta página usa OAuth2 do Discord. Configure CLIENT_ID e REDIRECT_URI (mesma origem do site). A troca segura do código deve ser feita no servidor (Authorization Code Grant).</div>
+        </footer>
+      </div>
+
+      <div class="center">
+        <div style="width:100%">
+          <h3 style="margin:0 0 12px 0">Seus servidores com permissão para adicionar bots</h3>
+          <div id="status" class="muted">Você não está autenticado.</div>
+          <div id="guildList" class="guilds" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === CONFIGURAÇÃO - Substitua os placeholders antes de usar ===
+    const CLIENT_ID = '1434721396809924820';            // Client ID da aplicação Discord (Kanary)
+    const REDIRECT_URI = window.location.origin + window.location.pathname; // ou URL de callback registrada
+    const REQUIRED_SCOPES = 'identify guilds';         // scopes necessários para listar servidores
+    const BOT_PERMISSIONS = '0';                       // permissoes para o bot ao adicionar (número inteiro)
+    // ===========================================================
+
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const statusEl = document.getElementById('status');
+    const guildListEl = document.getElementById('guildList');
+
+    // Monta URL de autorização (fluxo implícito com token na hash). Para produção, use Authorization Code + backend.
+    function oauthUrl() {
+      const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        response_type: 'token', // para demo front-end. Em produção use response_type=code e troque no servidor.
+        scope: REQUIRED_SCOPES,
+        prompt: 'consent'
+      });
+      return `https://discord.com/api/oauth2/authorize?${params.toString()}`;
+    }
+
+    // Monta link para adicionar o bot em um servidor específico
+    function inviteUrlForGuild(guildId) {
+      const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        scope: 'bot',
+        permissions: BOT_PERMISSIONS,
+        guild_id: guildId,
+        disable_guild_select: 'true'
+      });
+      return `https://discord.com/oauth2/authorize?${params.toString()}`;
+    }
+
+    // Parseia token da hash (#access_token=...)
+    function parseTokenFromHash() {
+      const hash = window.location.hash.substring(1);
+      if (!hash) return null;
+      const params = new URLSearchParams(hash);
+      return params.get('access_token');
+    }
+
+    // Salva token na sessão (apenas para demo)
+    function saveToken(token) {
+      sessionStorage.setItem('discord_token', token);
+    }
+    function getToken() {
+      return sessionStorage.getItem('discord_token') || parseTokenFromHash();
+    }
+    function clearToken() {
+      sessionStorage.removeItem('discord_token');
+      // limpar hash para evitar exposição
+      if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
+    async function fetchDiscord(path, token) {
+      return fetch(`https://discord.com/api${path}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => {
+        if (!r.ok) throw new Error('Erro: ' + r.status);
+        return r.json();
+      });
+    }
+
+    async function showGuilds(token) {
+      try {
+        statusEl.textContent = 'Carregando seus servidores...';
+        const user = await fetchDiscord('/v10/users/@me', token);
+        const guilds = await fetchDiscord('/v10/users/@me/guilds', token);
+
+        statusEl.innerHTML = `Logado como <strong>${user.username}#${user.discriminator}</strong>`;
+        logoutBtn.style.display = 'inline-flex';
+
+        // filtrar servidores onde o usuário tem permissão de "Manage Server" (0x20)
+        const allowed = guilds.filter(g => {
+          // permissions pode ser string; usar BigInt para segurança em grandes valores
+          try {
+            const p = BigInt(g.permissions);
+            return (p & BigInt(1 << 5)) !== BigInt(0); // 1<<5 === 32
+          } catch {
+            return (Number(g.permissions) & 0x20) === 0x20;
+          }
+        });
+
+        if (allowed.length === 0) {
+          guildListEl.innerHTML = '<div class="muted">Nenhum servidor com permissão para adicionar bots.</div>';
+          return;
+        }
+
+        guildListEl.innerHTML = '';
+        allowed.forEach(g => {
+          const div = document.createElement('div');
+          div.className = 'guild';
+          const left = document.createElement('div');
+          left.className = 'left';
+          const avatar = document.createElement('div');
+          avatar.className = 'avatar';
+          avatar.textContent = g.name.slice(0,2).toUpperCase();
+          const info = document.createElement('div');
+          info.innerHTML = `<div style="font-weight:600">${g.name}</div><div class="muted" style="margin-top:2px">ID: ${g.id}</div>`;
+          left.appendChild(avatar);
+          left.appendChild(info);
+
+          const addBtn = document.createElement('a');
+          addBtn.className = 'btn';
+          addBtn.href = inviteUrlForGuild(g.id);
+          addBtn.textContent = 'Adicionar Kanary';
+          addBtn.target = '_blank';
+          div.appendChild(left);
+          div.appendChild(addBtn);
+          guildListEl.appendChild(div);
+        });
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Erro ao carregar dados do Discord. Faça login novamente.';
+      }
+    }
+
+    // Eventos
+    loginBtn.addEventListener('click', () => {
+      if (!CLIENT_ID || CLIENT_ID.includes('SEU_CLIENT_ID')) {
+        alert('Substitua SEU_CLIENT_ID_AQUI em /index.html com o Client ID da sua aplicação Discord antes de usar.');
+        return;
+      }
+      window.location.href = oauthUrl();
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      clearToken();
+      guildListEl.innerHTML = '';
+      statusEl.textContent = 'Você saiu.';
+      logoutBtn.style.display = 'none';
+    });
+
+    // Inicialização: checar token e possivelmente parsear da hash
+    (function init() {
+      let token = parseTokenFromHash();
+      if (token) {
+        saveToken(token);
+        // limpar hash para não expor token
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      } else {
+        token = getToken();
+      }
+
+      if (token) {
+        // Redirecionar para o dashboard após o login
+        window.location.href = 'http://127.0.0.1:5500/dashboard/index.html?token=' + token;
+      } else {
+        statusEl.textContent = 'Você não está autenticado.';
+      }
+    })();
+  </script>
+</body>
+</html>
