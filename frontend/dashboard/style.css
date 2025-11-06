@@ -933,3 +933,21 @@ body {
         margin-left: 0;
     }
 }
+
+
+/* === Tweaks de responsividade (auto grid e imagens fluidas) === */
+.main { max-width: 1200px; margin: 0 auto; padding: 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+img, .server-icon, .bot-avatar { max-width: 100%; height: auto; object-fit: cover; }
+.table-wrap { overflow-x: auto; }
+.table { min-width: 720px; }
+@media (max-width: 960px) {
+  .layout { grid-template-columns: 72px 1fr; }
+  .sidebar .label { display: none; }
+}
+@media (max-width: 640px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: fixed; inset: 0 auto auto 0; width: 76vw; max-width: 320px; }
+  .content { padding-top: 56px; }
+}
+

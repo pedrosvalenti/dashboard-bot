@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kanary — Login</title>
+  <title>Robot — Login</title>
   <style>
     :root{--bg:#0f1724;--card:#0b1220;--accent:#4f46e5;--muted:#9aa4b2;color-scheme:dark}
     html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,system-ui,-apple-system,Arial;background:linear-gradient(180deg,#061025 0%,#071427 60%);color:#e6eef6}
@@ -34,12 +34,12 @@
         <div class="logo">
           <div class="icon">K</div>
           <div>
-            <h1>Kanary Dashboard</h1>
-            <p class="lead">Gerencie o Kanary — faça login com Discord para ver seus servidores e adicionar o bot.</p>
+            <h1>Robot Dashboard</h1>
+            <p class="lead">Gerencie o Robot — faça login com Discord para ver seus servidores e adicionar o bot.</p>
           </div>
         </div>
 
-        <p class="intro">Ao entrar via Discord permitimos apenas identificar o usuário e listar os servidores que ele administra. Para adicionar o bot em um servidor, clique em "Adicionar Kanary" no servidor desejado.</p>
+        <p class="intro">Ao entrar via Discord permitimos apenas identificar o usuário e listar os servidores que ele administra. Para adicionar o bot em um servidor, clique em "Adicionar Robot" no servidor desejado.</p>
 
         <div style="margin-top:8px">
           <!-- BOTÕES DE LOGIN -->
@@ -65,8 +65,8 @@
 
   <script>
     // === CONFIGURAÇÃO - Substitua os placeholders antes de usar ===
-    const CLIENT_ID = '1434721396809924820';            // Client ID da aplicação Discord (Kanary)
-    const REDIRECT_URI = window.location.origin + window.location.pathname; // ou URL de callback registrada
+    const CLIENT_ID = '1423054276225138812';            // Client ID da aplicação Discord (Robot)
+    const REDIRECT_URI = "http://localhost:3001/api/auth/discord/callback"; // ou URL de callback registrada
     const REQUIRED_SCOPES = 'identify guilds';         // scopes necessários para listar servidores
     const BOT_PERMISSIONS = '0';                       // permissoes para o bot ao adicionar (número inteiro)
     // ===========================================================
@@ -81,7 +81,7 @@
       const params = new URLSearchParams({
         client_id: CLIENT_ID,
         redirect_uri: REDIRECT_URI,
-        response_type: 'token', // para demo front-end. Em produção use response_type=code e troque no servidor.
+        response_type: 'code', // para demo front-end. Em produção use response_type=code e troque no servidor.
         scope: REQUIRED_SCOPES,
         prompt: 'consent'
       });
@@ -172,7 +172,7 @@
           const addBtn = document.createElement('a');
           addBtn.className = 'btn';
           addBtn.href = inviteUrlForGuild(g.id);
-          addBtn.textContent = 'Adicionar Kanary';
+          addBtn.textContent = 'Adicionar Robot';
           addBtn.target = '_blank';
           div.appendChild(left);
           div.appendChild(addBtn);
@@ -220,5 +220,18 @@
       }
     })();
   </script>
+
+<script>
+const API_BASE = 'http://localhost:3001';
+async function doLogin() {
+  const r = await fetch(`${API_BASE}/api/auth/discord/login`, { credentials: 'include' });
+  const { url } = await r.json();
+  window.location.href = url;
+}
+
+
+if (loginBtn)  loginBtn.addEventListener('click', doLogin);
+</script>
+
 </body>
 </html>

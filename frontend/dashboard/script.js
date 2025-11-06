@@ -1,9 +1,17 @@
+// === API CONFIG ===
+const API_BASE = (window.API_BASE || 'http://localhost:3001');
+async function api(path, opts={}) {
+  const res = await fetch(`${API_BASE}${path}`, { credentials: 'include', ...opts });
+  if (!res.ok) throw new Error(`API ${path} -> ${res.status}`);
+  return res.json();
+}
 document.addEventListener('DOMContentLoaded', () => {
     initializeNavigation();
     initializeEventListeners();
     initializeChart();
     loadUserServers(); // Carrega os servidores do usuário
     loadDashboardData();
+    applyUserFromSession();
 });
 
 // ===== NAVEGAÇÃO ENTRE SEÇÕES =====
@@ -35,71 +43,36 @@ function initializeNavigation() {
 
 // Função para carregar os servidores do usuário
 async function loadUserServers() {
-    // Pegar o token da URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+  try {
+    const guilds = await api('/api/guilds'); // backend filtra por admin
+    const serverSelect = document.getElementById('server-select');
+    if (!serverSelect) return;
 
-    if (!token) {
-        window.location.href = '/index.html';
-        return;
+    serverSelect.innerHTML = '';
+    guilds.forEach(guild => {
+      const option = document.createElement('option');
+      option.value = guild.id;
+      option.textContent = guild.name;
+      serverSelect.appendChild(option);
+    });
+
+    // carrega o primeiro servidor
+    if (guilds.length > 0) {
+      await loadServerData(guilds[0].id);
+    } else {
+      showNotification('Você não é admin em nenhum servidor.', 'warning');
     }
 
-    try {
-        // Fazer a requisição para obter os dados do usuário
-        const userResponse = await fetch('https://discord.com/api/v10/users/@me', {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
+    // troca de servidor
+    serverSelect.onchange = (e) => loadServerData(e.target.value);
 
-        if (!userResponse.ok) {
-            throw new Error('Erro ao carregar dados do usuário');
-        }
-
-        const userData = await userResponse.json();
-        updateUserInfo(userData);
-
-        // Fazer a requisição para a API do Discord para obter os servidores
-        const response = await fetch('https://discord.com/api/v10/users/@me/guilds', {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Erro ao carregar servidores');
-        }
-
-        const guilds = await response.json();
-        
-        // Filtrar servidores onde o usuário tem permissão de administrador (0x8)
-        const adminGuilds = guilds.filter(g => {
-            const permissions = BigInt(g.permissions);
-            return (permissions & BigInt(0x8)) === BigInt(0x8);
-        });
-
-        // Atualizar o select de servidores
-        const serverSelect = document.getElementById('server-select');
-        serverSelect.innerHTML = ''; // Limpar opções existentes
-
-        adminGuilds.forEach(guild => {
-            const option = document.createElement('option');
-            option.value = guild.id;
-            option.textContent = guild.name;
-            serverSelect.appendChild(option);
-        });
-
-        // Armazenar o token na sessionStorage
-        sessionStorage.setItem('discord_token', token);
-
-        // Carregar dados do primeiro servidor
-        if (adminGuilds.length > 0) {
-            loadServerData(adminGuilds[0].id);
-        }
-    } catch (error) {
-        console.error('Erro ao carregar servidores:', error);
-        showNotification('Erro ao carregar servidores. Por favor, faça login novamente.', 'error');
-    }
+    showNotification('Servidores carregados', 'success');
+  } catch (e) {
+    console.error('loadUserServers falhou:', e);
+    showNotification('Erro ao carregar servidores. Faça login novamente.', 'error');
+    // se quiser, redirecione:
+    // window.location.href = '/index.html';
+  }
 }
 
 // ===== EVENT LISTENERS =====
@@ -180,117 +153,78 @@ function handleLogout(event) {
 // Função para carregar dados do servidor selecionado
 async function loadServerData(serverId) {
     try {
-        const token = sessionStorage.getItem('discord_token');
-        if (!token) {
-            throw new Error('Token não encontrado');
+        // busca dados do backend (envia cookie automaticamente com credentials: 'include' no helper api())
+        const { guild, stats } = await api(`/api/guilds/${serverId}/stats`);
+
+        // Atualiza ícone, se houver
+        if (guild && guild.icon) {
+            const serverIcon = `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`;
+            const el = document.querySelector('.server-selector i');
+            if (el) el.style.backgroundImage = `url(${serverIcon})`;
         }
 
-        // Buscar informações do servidor a partir do cache dos servidores
-        const response = await fetch('https://discord.com/api/v10/users/@me/guilds', {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            console.error('Erro na resposta da API:', await response.text());
-            throw new Error('Erro ao carregar lista de servidores');
-        }
-
-        const guilds = await response.json();
-        const serverData = guilds.find(g => g.id === serverId);
-        
-        if (!serverData) {
-            throw new Error('Servidor não encontrado');
-        }
-
-        // Em vez de tentar obter dados detalhados que podem requerer permissões adicionais,
-        // vamos usar os dados que já temos do servidor
-        let memberCount = 0;
-        let onlineCount = 0;
-
-        // Tenta obter o número aproximado de membros do servidor, se disponível
-        try {
-            const countResponse = await fetch(`https://discord.com/api/v10/guilds/${serverId}?with_counts=true`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+        // Atualiza header/nome do servidor, se você tiver essa função
+        if (typeof updateDashboardWithServerData === 'function') {
+            updateDashboardWithServerData({
+                name: guild?.name || 'Servidor',
+                icon: guild?.icon || null,
+                id: guild?.id || serverId
             });
+        }
 
-            if (countResponse.ok) {
-                const countData = await countResponse.json();
-                memberCount = countData.approximate_member_count || 0;
-                onlineCount = countData.approximate_presence_count || 0;
-            }
-        } catch (countError) {
-            console.warn('Não foi possível obter contagens detalhadas:', countError);
-            // Continue com os dados básicos que já temos
-        }
-        
-        updateDashboardWithServerData(serverData);
-        
-        const serverStats = {
-            members: memberCount || serverData.member_count || '?',
-            online: onlineCount || '?',
-            commands_used: 0, // Este valor precisaria vir do seu bot
-            bot_status: 'online' // Este valor também precisaria vir do seu bot
-        };
-        
-        // Atualizar dados básicos do servidor primeiro
-        updateDashboardWithServerData({
-            name: serverData.name,
-            icon: serverData.icon,
-            id: serverData.id
+        console.log(stats)
+
+        // Atualiza estatísticas (com fallback)
+        updateDashboardStats(stats || { 
+            members: 0,
+          online_members: 0,
+          text_channels: 0,
+          voice_channels: 0,
+          commands: 0,
+          uptime: '—'
         });
-        
-        // Atualizar o ícone do servidor se disponível
-        if (serverData.icon) {
-            const serverIcon = `https://cdn.discordapp.com/icons/${serverData.id}/${serverData.icon}.png?size=128`;
-            document.querySelector('.server-selector i').style.backgroundImage = `url(${serverIcon})`;
-        }
-        
-        // Depois atualizar as estatísticas
-        updateDashboardStats(serverStats);
-    } catch (error) {
-        console.error('Erro ao carregar dados do servidor:', error);
+
+    } catch (e) {
+        console.error('loadServerData falhou:', e);
         showNotification('Erro ao carregar dados do servidor', 'error');
     }
 }
 
+
 // Nova função para atualizar estatísticas do dashboard
 function updateDashboardStats(data) {
+    console.log(data)
     const statValues = document.querySelectorAll('.stat-value');
-    
     // Atualizar número de membros
     if (statValues[0]) {
         statValues[0].textContent = typeof data.members === 'number' ? formatNumber(data.members) : data.members;
         const statChange = statValues[0].nextElementSibling;
         if (statChange) {
-            statChange.textContent = 'membros no total';
+            statChange.textContent = ` ${data.online_members} membros no online`;
         }
     }
     
     // Atualizar número de membros online
     if (statValues[1]) {
-        statValues[1].textContent = typeof data.online === 'number' ? formatNumber(data.online) : data.online;
+        statValues[1].textContent = typeof data.channels === 'number' ? formatNumber(data.channels) : data.channels;
         const statChange = statValues[1].nextElementSibling;
         if (statChange) {
-            statChange.textContent = 'membros online';
+            statChange.textContent = `${data.text_channels} canais de texto, ${data.voice_channels} de voz`;
         }
     }
     
     // Atualizar comandos usados
     if (statValues[2]) {
-        statValues[2].textContent = formatNumber(data.commands_used);
+        statValues[2].textContent = formatNumber(data.commands);
         const statChange = statValues[2].nextElementSibling;
         if (statChange) {
-            statChange.textContent = `+${Math.floor(data.commands_used * 0.05)} hoje`;
+            statChange.textContent = `+${Math.floor(data.commands * 0.05)} hoje`;
         }
     }
     
     // Atualizar status do bot
     if (statValues[3]) {
-        statValues[3].textContent = data.bot_status.charAt(0).toUpperCase() + data.bot_status.slice(1);
+        statValues[3].textContent = data.uptime.charAt(0).toUpperCase() + data.uptime.slice(1);
         const statChange = statValues[3].nextElementSibling;
         if (statChange) {
             statChange.textContent = `Ping: ${Math.floor(Math.random() * 30) + 20}ms`;
@@ -631,7 +565,8 @@ function updateUserInfo(userData) {
 
 // Formatar números com separadores
 function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return num
+    // return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 // Obter data formatada
@@ -641,11 +576,60 @@ function getFormattedDate() {
 }
 
 // Verificar se o usuário está autenticado
-function checkAuthentication() {
+async function checkAuthentication() {
+    try {
+        const me = await api('/api/auth/me');
+        const userAvatarEl = document.querySelector('.user-avatar');
+        if (userAvatarEl && me.user?.avatar && me.user?.id) {
+            userAvatarEl.src = `https://cdn.discordapp.com/avatars/${me.user.id}/${me.user.avatar}.png?size=128`;
+        }
+    } catch (e) {
+        // não autenticado
+        console.log('Usuário não autenticado, redirecionando para login...');
+        window.location.href = '/index.html';
+    }
+
     // Aqui você verificaria se o usuário está logado
     // Se não estiver, redirecionar para login
     console.log('Verificando autenticação...');
 }
+
+async function applyUserFromSession() {
+  try {
+    const { user } = await api('/api/auth/me'); // api() precisa usar credentials:'include'
+    if (!user) return;
+
+    const displayName = user.global_name || user.username || 'Usuário';
+
+    // Trata avatar Discord: gif se começar com 'a_', senão png; se for nulo, usa default
+    let avatarUrl;
+    if (user.avatar) {
+      const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
+      avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
+    } else {
+      // default avatars 0..4 — usa um índice determinístico
+      const idx = Number(BigInt(user.id) % 5n);
+      avatarUrl = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+    }
+
+    // Atualiza UI (ajuste os seletores para os seus elementos)
+    const nameEl = document.querySelector('.username, #userName, [data-user-name]');
+    const avatarEl = document.querySelector('.user-avatar, #userAvatar, [data-user-avatar]');
+    if (nameEl) nameEl.textContent = displayName;
+    if (avatarEl) avatarEl.src = avatarUrl;
+
+  } catch (e) {
+    console.warn('applyUserFromSession falhou:', e);
+    // se 401, manda pro login
+    // window.location.href = '/index.html';
+  }
+}
+
+// chame isso no seu bootstrap:
+document.addEventListener('DOMContentLoaded', () => {
+  applyUserFromSession();
+});
+
 
 // ===== EXPORTAR FUNÇÕES =====
 window.dashboardUtils = {
